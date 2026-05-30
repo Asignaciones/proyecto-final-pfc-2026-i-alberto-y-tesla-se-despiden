@@ -86,24 +86,40 @@ object AsignacionAulas {
   }
 
   /** Cantidad de cursos cuya aula asignada tiene capacidad menor al número de estudiantes. */
-  def capacidadFallida(cursos: Cursos, aulas: Aulas, a: Asignacion): Int = ???
+  def capacidadFallida(cursos: Cursos, aulas: Aulas, a: Asignacion): Int =
+    cursos.indices.toVector.count { i =>
+      a(i) >= 0 && capAula(aulas(a(i))) < estCurso(cursos(i))
+    }
 
   /**
-   * Suma de (cap(aula_i) - est(curso_i)) para los cursos asignados
-   * con capacidad suficiente.
-   */
-  def desperdicio(cursos: Cursos, aulas: Aulas, a: Asignacion): Int = ???
+   * Suma de (cap(aula_i) - est(curso_i)) para los cursos asignados   * con capacidad suficiente.   */
+  def desperdicio(cursos: Cursos, aulas: Aulas, a: Asignacion): Int =
+    cursos.indices.toVector.map { i =>
+      if (a(i) >= 0 && capAula(aulas(a(i))) >= estCurso(cursos(i)))
+        capAula(aulas(a(i))) - estCurso(cursos(i))
+      else 0
+    }.sum
 
-  /**
-   * Ordena los cursos asignados por hora de inicio y suma las distancias
-   * entre aulas de cursos consecutivos.
-   */
   def movilidad(cursos: Cursos, aulas: Aulas, d: Distancias,
-                a: Asignacion): Int = ???
+                a: Asignacion): Int = {
+    val asignados = cursos.indices.toVector
+      .filter(i => a(i) >= 0)
+      .sortBy(i => iniCurso(cursos(i)))
+    asignados.zip(asignados.drop(1)).map { case (i, j) =>
+      d(a(i))(a(j))
+    }.sum
+  }
 
   /** Costo total: w_CH * CH + w_CF * CF + w_DE * DE + w_MV * MV. */
   def costoAsignacion(cursos: Cursos, aulas: Aulas, d: Distancias,
-                      a: Asignacion, w: Pesos): Int = ???
+                      a: Asignacion, w: Pesos): Int = {
+    val (wCH, wCF, wDE, wMV) = w
+    wCH * choques(cursos, a) +
+      wCF * capacidadFallida(cursos, aulas, a) +
+      wDE * desperdicio(cursos, aulas, a) +
+      wMV * movilidad(cursos, aulas, d, a)
+
+  }
 
   /**
    * Genera todas las asignaciones completas posibles: vectores en {0,..,m-1}^n.
