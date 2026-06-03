@@ -76,12 +76,41 @@ object AsignacionAulasPar {
    * Versión paralela de generarAsignaciones:
    * paraleliza la construcción usando parallel sobre los valores del primer curso.
    */
-  def generarAsignacionesPar(n: Int, m: Int): Vector[Asignacion] = ???
+  def generarAsignacionesPar(n: Int, m: Int): Vector[Asignacion] = {
+    if (n == 0) Vector(Vector.empty)
+    else {
+      val mid = m / 2
+      val aulasIzq = (0 until mid).toVector
+      val aulasDer = (mid until m).toVector
+
+      val (izq, der) = parallel(
+        aulasIzq.flatMap { aula =>
+          generarAsignaciones(n - 1, m).map(resto => aula +: resto)
+        },
+        aulasDer.flatMap { aula =>
+          generarAsignaciones(n - 1, m).map(resto => aula +: resto)
+        }
+      )
+      izq ++ der
+    }
+  }
 
   /**
    * Versión paralela de asignacionOptima:
    * divide el espacio de candidatos en dos mitades y combina los mínimos.
    */
   def asignacionOptimaPar(cursos: Cursos, aulas: Aulas, d: Distancias,
-                          w: Pesos): (Asignacion, Int) = ???
+                          w: Pesos): (Asignacion, Int) = {
+    val candidatas = generarAsignacionesPar(cursos.length, aulas.length)
+    val mid = candidatas.length / 2
+    val mitadIzq = candidatas.take(mid)
+    val mitadDer = candidatas.drop(mid)
+
+    val (minimoIzq, minimoDer) = parallel(
+      mitadIzq.map(a => (a, costoAsignacion(cursos, aulas, d, a, w))).minBy(_._2),
+      mitadDer.map(a => (a, costoAsignacion(cursos, aulas, d, a, w))).minBy(_._2)
+    )
+
+    if (minimoIzq._2 <= minimoDer._2) minimoIzq else minimoDer
+  }
 }
