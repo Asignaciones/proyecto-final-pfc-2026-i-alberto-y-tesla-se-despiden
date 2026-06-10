@@ -10,11 +10,11 @@
 
 ## Integrantes del grupo
 
-| Nombre completo | Código | Correo institucional |
-|-----------------|--------|----------------------|
-| [Estudiante 1]  |        |                      |
-| [Estudiante 2]  |        |                      |
-| [Estudiante 3]  |        |                      |
+| Nombre completo                  | Código  | Correo institucional |
+|----------------------------------|---------|----------------------|
+| Maria Fernanda Beancourt Montoya | 2459510 | maria.fernanda.betancourt@correounivalle.edu.co                    |
+| Kevin Andres Rosero Romo         | 2459554 | rosero.kevin@correounivalle.edu.co                     |
+
 
 **Obligatorio:** editar esta tabla con los datos reales de todos los integrantes.
 Si un integrante no aparece aquí, su nota individual será 0.0.
