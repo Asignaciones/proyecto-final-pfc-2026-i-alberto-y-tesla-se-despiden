@@ -1,127 +1,173 @@
-# Informe de proceso Algoritmo Factorial con Recursión de Cola
+# Informe de Proceso
 
-## Definición del Algoritmo
+## `generarAsignaciones` con recursión lineal
 
-```Scala
-def factorial(n: Int): BigInt = {
-  @annotation.tailrec
-  def loop(x: Int, acumulador: BigInt): BigInt = {
-    if (x <= 1) acumulador
-    else loop(x - 1, acumulador * x)
-  }
-  loop(n, 1)
+### Definición del algoritmo
+
+```scala
+def generarAsignaciones(n: Int, m: Int): Vector[Asignacion] = {
+  def aux(k: Int): Vector[Asignacion] =
+    if (k == 0) Vector(Vector.empty)
+    else
+      aux(k - 1).flatMap { resto =>
+        (0 until m).toVector.map(aula => resto :+ aula)
+      }
+  aux(n)
 }
 ```
 
-- La función `factorial` calcula el factorial de un número `n` utilizando **recursión de cola**.
-- La función interna `loop` es la que hace la recursión:
-  - Recibe dos parámetros:
-    - `x`: el valor actual decreciente hasta llegar a 1.
-    - `acumulador`: donde se guarda el resultado parcial en cada paso.
+- La función `generarAsignaciones` genera todas las asignaciones posibles para
+  `n` cursos y `m` aulas, es decir, todos los vectores en $\{0, \ldots, m-1\}^n$.
+- La función interna `aux` es la que hace la recursión:
+  - Recibe un parámetro `k`: el número de cursos para los que se generan asignaciones
+    en ese momento.
+  - Construye las asignaciones de longitud `k` a partir de las de longitud `k-1`.
 
-- El decorador `@annotation.tailrec` obliga a que la función sea optimizada como recursión de cola, es decir, **no se acumulan llamados en la pila**.
+---
 
-## Explicación paso a paso
+### Explicación paso a paso
 
-### Caso base
+#### Caso base
 
-```Scala
-if (x <= 1) acumulador
+```scala
+if (k == 0) Vector(Vector.empty)
 ```
 
-Cuando `x` llega a `1`, la función retorna directamente el valor acumulado, evitando más llamadas.
+Cuando `k` llega a `0` no hay cursos que asignar, por lo que existe exactamente
+una asignación posible: la asignación vacía. Se devuelve un vector que contiene
+un solo elemento: el vector vacío.
 
-### Caso recursivo
+#### Caso recursivo
 
-```Scala
-loop(x - 1, acumulador * x)
+```scala
+aux(k - 1).flatMap { resto =>
+  (0 until m).toVector.map(aula => resto :+ aula)
+}
 ```
 
 En cada llamada:
 
-- Se reduce el valor de `x` en 1.
-- Se multiplica el acumulador por `x` y se pasa a la siguiente iteración.
-- Como es recursión de cola, la llamada recursiva es la **última instrucción** en ejecutarse, lo que permite a Scala optimizar la pila.
+- Se llama a `aux(k-1)` para obtener todas las asignaciones de longitud `k-1`.
+- Para cada asignación parcial `resto` se agregan todas las aulas posibles
+  $\{0, \ldots, m-1\}$ al final con `:+`, generando `m` nuevas asignaciones
+  de longitud `k`.
+- `flatMap` aplana todos los resultados en un solo vector plano.
 
 ---
 
-## Llamados de pila en recursión de cola
+### Llamados de pila
 
-Ejemplo:
+Ejemplo con $n = 3$ cursos y $m = 2$ aulas:
 
-```Scala
-factorial(5)
+```scala
+generarAsignaciones(3, 2)
 ```
 
-### Paso 1: Llamada inicial
+#### Paso 1: Llamada inicial
 
-```Scala
-loop(5, 1)
+```scala
+aux(3)
 ```
 
-### Paso 2: Primera iteración
+#### Paso 2: Primera llamada recursiva
 
-```Scala
-loop(4, 5)   // acumulador = 1 * 5
+```scala
+aux(2)
 ```
 
-### Paso 3: Segunda iteración
+#### Paso 3: Segunda llamada recursiva
 
-```Scala
-loop(3, 20)  // acumulador = 5 * 4
+```scala
+aux(1)
 ```
 
-### Paso 4: Tercera iteración
+#### Paso 4: Tercera llamada recursiva — caso base
 
-```Scala
-loop(2, 60)  // acumulador = 20 * 3
+```scala
+aux(0) → Vector(Vector())
 ```
 
-### Paso 5: Cuarta iteración
+#### Paso 5: Retorno a `aux(1)`
 
-```Scala
-loop(1, 120) // acumulador = 60 * 2
+```scala
+Vector(Vector()).flatMap { resto =>
+  Vector(0, 1).map(aula => resto :+ aula)
+}
+→ Vector(Vector(0), Vector(1))
 ```
 
-### Paso 6: Caso base
+#### Paso 6: Retorno a `aux(2)`
 
-```Scala
-return 120
+```scala
+Vector(Vector(0), Vector(1)).flatMap { resto =>
+  Vector(0, 1).map(aula => resto :+ aula)
+}
+→ Vector(Vector(0,0), Vector(0,1), Vector(1,0), Vector(1,1))
 ```
+
+#### Paso 7: Retorno a `aux(3)`
+
+```scala
+Vector(Vector(0,0), Vector(0,1), Vector(1,0), Vector(1,1)).flatMap { resto =>
+  Vector(0, 1).map(aula => resto :+ aula)
+}
+→ Vector(
+    Vector(0,0,0), Vector(0,0,1),
+    Vector(0,1,0), Vector(0,1,1),
+    Vector(1,0,0), Vector(1,0,1),
+    Vector(1,1,0), Vector(1,1,1)
+  )
+```
+
+El resultado final son $2^3 = 8$ asignaciones posibles.
 
 ---
 
-## Diferencia con recursión normal
-
-- En **recursión normal** cada llamada queda en la pila esperando a que termine la siguiente, lo que puede causar desbordamiento si `n` es muy grande.
-- En **recursión de cola**, el compilador transforma el proceso en un **bucle optimizado**, por lo que no se guarda cada llamada en la pila y el algoritmo puede ejecutarse para valores muy grandes sin problema.
-
----
-
-## Ejemplo de uso
-
-```Scala
-val resultado = factorial(5)
-println(resultado)  // 120
-```
-
-El resultado de `factorial(5)` es `120`.
-
-## Diagrama de llamados de pila con recursión de cola
+### Diagrama de llamados de pila
 
 ```mermaid
 sequenceDiagram
-    participant Main as factorial(5)
-    participant L1 as loop(5, 1)
-    participant L2 as loop(4, 5)
-    participant L3 as loop(3, 20)
-    participant L4 as loop(2, 60)
-    participant L5 as loop(1, 120)
+    participant Main as generarAsignaciones(3,2)
+    participant A3 as aux(3)
+    participant A2 as aux(2)
+    participant A1 as aux(1)
+    participant A0 as aux(0)
 
-    Main->>L1: llamada inicial
-    L1->>L2: tail call con (4, 5)
-    L2->>L3: tail call con (3, 20)
-    L3->>L4: tail call con (2, 60)
-    L4->>L5: tail call con (1, 120)
-    L5-->>Main: return 120
+    Main->>A3: aux(3)
+    A3->>A2: aux(2)
+    A2->>A1: aux(1)
+    A1->>A0: aux(0)
+    A0-->>A1: Vector(Vector())
+    A1-->>A2: Vector(Vector(0), Vector(1))
+    A2-->>A3: Vector(Vector(0,0), Vector(0,1), Vector(1,0), Vector(1,1))
+    A3-->>Main: Vector(Vector(0,0,0), Vector(0,0,1), ..., Vector(1,1,1))
 ```
+
+---
+
+### Diferencia con recursión de cola
+
+- En **recursión de cola** cada llamada reemplaza a la anterior en la pila porque
+  la llamada recursiva es la última instrucción. No se acumulan llamados.
+- En `generarAsignaciones` la recursión **no es de cola** porque después de llamar
+  a `aux(k-1)` todavía se aplica `flatMap` sobre el resultado. Cada llamada queda
+  en la pila esperando el resultado de la anterior para poder continuar.
+- Esto significa que para $n$ cursos se acumulan $n+1$ llamados en la pila antes
+  de empezar a resolverlos. Por eso el profe limita $n \leq 8$ para mantener el
+  espacio de búsqueda tratable.
+
+---
+
+### Ejemplo de uso
+
+```scala
+val asignaciones = generarAsignaciones(3, 2)
+// Vector(
+//   Vector(0,0,0), Vector(0,0,1),
+//   Vector(0,1,0), Vector(0,1,1),
+//   Vector(1,0,0), Vector(1,0,1),
+//   Vector(1,1,0), Vector(1,1,1)
+// )
+```
+
+El resultado de `generarAsignaciones(3, 2)` son $2^3 = 8$ asignaciones posibles.
